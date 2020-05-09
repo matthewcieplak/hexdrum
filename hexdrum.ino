@@ -3,12 +3,12 @@
 //look mum no computer
 //lookmumnocomputer@gmail.com
 //www.facebook.com/lookmumnocomputer
-//ITS AN ABSOLUTE MESS BUT IT WORKS.... SORT OF.... 
+//ITS AN ABSOLUTE MESS BUT IT WORKS.... SORT OF....
 //YOU NEED QUITE A CLEAN CLOCK TRIGGER SIGNAL. QUITE A SHORT PULSE!
 //To make it work better add this circuit to the clock input :-
 //https://www.cgs.synth.net/modules/cgs24_gatetotrigger.html
 
-//the premise of this is a simple performance sequencer. 
+//the premise of this is a simple performance sequencer.
 //it is used in synth bike mk2 to sequencer the drums.
 //i figured whats the point in not sharing it!!!
 //dont be a pleb and steal it for a product or some shit. Build it and
@@ -24,6 +24,7 @@
 // STEP LENGTH analog pin 1 (A1)
 // Channel select Analog pin (A0)
 // SHIFT KNOB Analog pin (A2)
+// CLOCK OUT (A3) (digital)
 // LED (big button LED) pin 20 (A6)
 
 // OUTPUT 1 ... pin 8
@@ -54,6 +55,7 @@ int LastResetButtonState = 0;
 
 int CHANNELSELECT = 0;
 
+
 //BeatShiftingPot
 int PotValue1 = 0;
 int PotValue2 = 0;
@@ -65,7 +67,7 @@ int Potval;
 int UnscaledPotval = 0;
 
 //FILL BUTTON
-int FillButton =5;
+int FillButton = 5;
 int FillButtonState = 0;
 int Fill1 = 0;
 int Fill2 = 0;
@@ -82,8 +84,8 @@ int ClearState = 0;
 long time = 0;
 long debounce = 150;
 int ButtonBankSelectState[7];
-int BankState[7] = {LOW,LOW,LOW,LOW,LOW,LOW,LOW};
-int Bankprevious[7] = {HIGH,HIGH,HIGH,HIGH,HIGH,HIGH,HIGH};
+int BankState[7] = {LOW, LOW, LOW, LOW, LOW, LOW, LOW};
+int Bankprevious[7] = {HIGH, HIGH, HIGH, HIGH, HIGH, HIGH, HIGH};
 
 int BankArrayShift1 = 0;
 int BankArrayShift2 = 0;
@@ -118,13 +120,13 @@ int NewKnobValue6 = 0;
 #define TOLERANCE 0
 
 
-int looper = 0;          
-int Channel = 1;         
+int looper = 0;
+int Channel = 1;
 int ClockState = 0;            //clock state stuff
 int StepLength = 0;           //What the pot uses for step length
 int steps = 0;              //beginning number of the steps in the sequence adjusted by StepLength
 const int clkIn = 2;
-int BigButton = 19;
+int BigButton = A5;
 
 int ButtonClear = 4;         //reset button for the moment
 int ButtonDelete = 7;
@@ -137,6 +139,8 @@ int ChannelSelectState4 = 0;
 int ChannelSelectState5 = 0;
 int ChannelSelectState6 = 0;
 
+int shiftKnobAnalogValues[8] = { 0, 127, 254, 383, 511, 638, 767, 895 };
+
 
 int OUT1 = 8;
 int OUT2 = 9;
@@ -144,28 +148,27 @@ int OUT3 = 10;
 int OUT4 = 11;
 int OUT5 = 12;
 int OUT6 = 13;
-int BankLED = 17;
-
-
+int BankLED = A6;//17
+int ClockOut = A3;
 
 int Sequence[14][43] = {
-{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,},
-{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,},
-{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,},
-{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,},
-{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,},
-{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,},
-{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,},
-{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,},
-{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,},
-{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,},
-{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,},
-{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,},
-{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,},
-{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,},
+  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,},
+  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,},
+  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,},
+  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,},
+  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,},
+  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,},
+  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,},
+  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,},
+  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,},
+  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,},
+  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,},
+  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,},
+  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,},
+  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,},
 
 
-//sequence array 1
+  //sequence array 1
 
 };//sequence array 1
 
@@ -174,71 +177,68 @@ int Sequence[14][43] = {
 
 void setup()
 {
-  
-  pinMode(OUT1,OUTPUT);
-  pinMode(OUT2,OUTPUT);
-  pinMode(OUT3,OUTPUT);
-  pinMode(OUT4,OUTPUT);
-  pinMode(OUT5,OUTPUT);
-  pinMode(OUT6,OUTPUT);
+
+  pinMode(OUT1, OUTPUT);
+  pinMode(OUT2, OUTPUT);
+  pinMode(OUT3, OUTPUT);
+  pinMode(OUT4, OUTPUT);
+  pinMode(OUT5, OUTPUT);
+  pinMode(OUT6, OUTPUT);
   pinMode(BankLED, OUTPUT);
+  pinMode(ClockOut, OUTPUT);
   pinMode(clkIn, INPUT);
-  pinMode(BigButton,INPUT);
-  pinMode(ButtonDelete,INPUT);
-  pinMode(ButtonClear,INPUT);
+  pinMode(BigButton, INPUT);
+  pinMode(ButtonDelete, INPUT);
+  pinMode(ButtonClear, INPUT);
 
   pinMode(ButtonBankSelect, INPUT);
   pinMode(ResetButton, INPUT);
   pinMode(FillButton, INPUT);
 
-  
-
-StepLength = analogRead(1);
-if(0<StepLength){
-steps= 2;}
-if(200<StepLength){
-steps= 4;}
-if(500<StepLength){
-steps= 8;}
-if(800<StepLength){
-steps=16;}
-if(1000<StepLength){ 
-steps=32;}   
-//making sure it starts up knowing where the knob is
 
 
-CHANNELSELECT= analogRead(2);
+  StepLength = 1024 - analogRead(1);
+  StepLength = 1024 - analogRead(1);
+  if (0 < StepLength) {
+    steps = 2;
+  }
+  if (200 < StepLength) {
+    steps = 4;
+  }
+  if (500 < StepLength) {
+    steps = 8;
+  }
+  if (800 < StepLength) {
+    steps = 16;
+  }
+  if (1000 < StepLength) {
+    steps = 32;
+  }
+  //making sure it starts up knowing where the knob is
+
+
+  CHANNELSELECT = analogRead(2);
 
 
 
-digitalWrite(BankLED, HIGH);
-delay(200);
-digitalWrite(BankLED, LOW);
-delay(180);
-digitalWrite(BankLED, HIGH);
-delay(160);
-digitalWrite(BankLED, LOW);
-delay(140);
-digitalWrite(BankLED, HIGH);
-delay(120);
-digitalWrite(BankLED, LOW);
-delay(100);
-digitalWrite(BankLED, HIGH);
-delay(80);
-digitalWrite(BankLED, LOW);
-delay(60);
-digitalWrite(BankLED, HIGH);
-delay(40);
-digitalWrite(BankLED, LOW);
-delay(20);
-digitalWrite(BankLED, HIGH);
-delay(60);
-digitalWrite(BankLED, LOW);
+  blink(BankLED);
+  blink(OUT1);
+  blink(OUT2);
+  blink(OUT3);
+  blink(OUT4);
+  blink(OUT5);
+  blink(OUT6);
 
 
-attachInterrupt(0, isr, RISING);
+  attachInterrupt(clkIn, isr, RISING);
 
 
+}
+
+void blink(int output) {
+  digitalWrite(output, HIGH);
+  delay(50);
+  digitalWrite(output, LOW);
 }
 
 
@@ -246,132 +246,167 @@ attachInterrupt(0, isr, RISING);
 void loop()
 {
 
- 
-
-RecordButtonState = digitalRead(BigButton);
-DeleteButtonState = digitalRead(ButtonDelete);
-ClearButtonState = digitalRead(ButtonClear); 
-ResetButtonState = digitalRead(ResetButton);
-FillButtonState = digitalRead(FillButton);
-ButtonBankSelectState[BankArrayNumber] = digitalRead(ButtonBankSelect);//These setup the states of the buttons
 
 
-  {if(buttonState == HIGH) {
+  RecordButtonState = digitalRead(BigButton);
+  DeleteButtonState = digitalRead(ButtonDelete);
+  ClearButtonState = digitalRead(ButtonClear);
+  ResetButtonState = digitalRead(ResetButton);
+  FillButtonState = digitalRead(FillButton);
+  ButtonBankSelectState[BankArrayNumber] = digitalRead(ButtonBankSelect);//These setup the states of the buttons
 
-    looper    = (looper+1);
-    BankPush1 = (BankPush1+1);
-    BankPush2 = (BankPush2+1);
-    BankPush3 = (BankPush3+1);
-    BankPush4 = (BankPush4+1);
-    BankPush5 = (BankPush5+1);
-    BankPush6 = (BankPush6+1);
-    ClockKeep = (ClockKeep+1);
-    
-    digitalWrite(OUT1,Sequence       [1+BankArrayShift1][BankPush1 + NewKnobValue1] || (Fill1));
-    digitalWrite(OUT2,Sequence       [2+BankArrayShift2][BankPush2 + NewKnobValue2] || (Fill2));
-    digitalWrite(OUT3,Sequence       [3+BankArrayShift3][BankPush3 + NewKnobValue3] || (Fill3));
-    digitalWrite(OUT4,Sequence       [7+BankArrayShift4][BankPush4 + NewKnobValue4] || (Fill4));
-    digitalWrite(OUT5,Sequence       [8+BankArrayShift5][BankPush5 + NewKnobValue5] || (Fill5));
-    digitalWrite(OUT6,Sequence       [9+BankArrayShift6][BankPush6 + NewKnobValue6] || (Fill6));
-    delay(10);
-    digitalWrite(OUT1,LOW);
-    digitalWrite(OUT2,LOW);
-    digitalWrite(OUT3,LOW);
-    digitalWrite(OUT4,LOW);
-    digitalWrite(OUT5,LOW);
-    digitalWrite(OUT6,LOW);
-    buttonState = LOW;
-  } 
-  else 
+
+{ if (buttonState == HIGH) {
+
+      looper    = (looper + 1);
+      BankPush1 = (BankPush1 + 1);
+      BankPush2 = (BankPush2 + 1);
+      BankPush3 = (BankPush3 + 1);
+      BankPush4 = (BankPush4 + 1);
+      BankPush5 = (BankPush5 + 1);
+      BankPush6 = (BankPush6 + 1);
+      ClockKeep = (ClockKeep + 1);
+      digitalWrite(ClockOut, HIGH);
+      digitalWriteCast(OUT1, Sequence[1 + BankArrayShift1][BankPush1 + NewKnobValue1] || (Fill1));
+      digitalWriteCast(OUT2, Sequence[2 + BankArrayShift2][BankPush2 + NewKnobValue2] || (Fill2));
+      digitalWriteCast(OUT3, Sequence[3 + BankArrayShift3][BankPush3 + NewKnobValue3] || (Fill3));
+      digitalWriteCast(OUT4, Sequence[7 + BankArrayShift4][BankPush4 + NewKnobValue4] || (Fill4));
+      digitalWriteCast(OUT5, Sequence[8 + BankArrayShift5][BankPush5 + NewKnobValue5] || (Fill5));
+      digitalWriteCast(OUT6, Sequence[9 + BankArrayShift6][BankPush6 + NewKnobValue6] || (Fill6));
+      delay(10);
+      digitalWrite(ClockOut, LOW);
+      digitalWrite(OUT1, LOW);
+      digitalWrite(OUT2, LOW);
+      digitalWrite(OUT3, LOW);
+      digitalWrite(OUT4, LOW);
+      digitalWrite(OUT5, LOW);
+      digitalWrite(OUT6, LOW);
+      buttonState = LOW;
+    }
+    else
+    {
+      looper = looper;
+      ClockKeep = ClockKeep;
+    }
+  }
+
+
+
+  if (RecordButtonState != LastRecordButtonState) {
+    if ((RecordButtonState == HIGH) && (Channel == 1)) {
+      Sequence[Channel + BankRecord][BankPush1 + 1 + NewKnobValue1] = 1;
+    }
+    else if ((RecordButtonState == HIGH) && (Channel == 2)) {
+      Sequence[Channel + BankRecord][BankPush2 + 1 + NewKnobValue2] = 1;
+    }
+    else if ((RecordButtonState == HIGH) && (Channel == 3)) {
+      Sequence[Channel + BankRecord][BankPush3 + 1 + NewKnobValue3] = 1;
+    }
+    else if ((RecordButtonState == HIGH) && (Channel == 7)) {
+      Sequence[Channel + BankRecord][BankPush4 + 1 + NewKnobValue4] = 1;
+    }
+    else if ((RecordButtonState == HIGH) && (Channel == 8)) {
+      Sequence[Channel + BankRecord][BankPush5 + 1 + NewKnobValue5] = 1;
+    }
+    else if ((RecordButtonState == HIGH) && (Channel == 9)) {
+      Sequence[Channel + BankRecord][BankPush6 + 1 + NewKnobValue6] = 1;
+    }
+
+
+    else {
+    }
+    delay (5);
+  }                                                                   //RECORD BUTTON
+
+
+
+  //This bit is the clock in and step advance stuff
+
+
+
   {
-    looper = looper;
-    ClockKeep = ClockKeep;
-  }}
-
-
-
-if(RecordButtonState != LastRecordButtonState){
-     if((RecordButtonState == HIGH) && (Channel == 1)) {
-                                                         Sequence[Channel+BankRecord][BankPush1+1+NewKnobValue1] = 1;}
-else if((RecordButtonState == HIGH) && (Channel == 2)) {
-                                                         Sequence[Channel+BankRecord][BankPush2+1+NewKnobValue2] = 1;}
-else if((RecordButtonState == HIGH) && (Channel == 3)) {
-                                                         Sequence[Channel+BankRecord][BankPush3+1+NewKnobValue3] = 1;}
-else if((RecordButtonState == HIGH) && (Channel == 7)) {
-                                                         Sequence[Channel+BankRecord][BankPush4+1+NewKnobValue4] = 1;}
-else if((RecordButtonState == HIGH) && (Channel == 8)) {
-                                                         Sequence[Channel+BankRecord][BankPush5+1+NewKnobValue5] = 1;}
-else if((RecordButtonState == HIGH) && (Channel == 9)) {
-                                                         Sequence[Channel+BankRecord][BankPush6+1+NewKnobValue6] = 1;}                                                                                                                  
-
-
-     else { 
+    if ((ClockKeep == 1)  || (ClockKeep == 5) || (ClockKeep == 9)  || (ClockKeep == 13) ||  (ClockKeep == 17)  || (ClockKeep == 21) || (ClockKeep == 25) || (ClockKeep == 29) && (BankRecord == 0)) {
+      digitalWrite(BankLED, HIGH);
+    }
   }
-  delay (5); 
-}                                                                   //RECORD BUTTON
-
-
-
-                                        //This bit is the clock in and step advance stuff
-
-
-
- {if((ClockKeep == 1)  || (ClockKeep == 5) || (ClockKeep == 9)  || (ClockKeep == 13) ||  (ClockKeep == 17)  || (ClockKeep == 21) || (ClockKeep == 25) || (ClockKeep == 29) && (BankRecord == 0)) {digitalWrite(BankLED,HIGH);} }
- {if((ClockKeep == 1)  || (ClockKeep == 5) || (ClockKeep == 9)  || (ClockKeep == 13) ||  (ClockKeep == 17)  || (ClockKeep == 21) || (ClockKeep == 25) || (ClockKeep == 29) && (BankRecord == 3)) {digitalWrite(BankLED,LOW);}
- else {digitalWrite(BankLED, BankState[BankArrayNumber]);}}
-
- 
-
-if(ButtonBankSelectState[BankArrayNumber] == HIGH && Bankprevious[BankArrayNumber] == LOW && millis() - time > debounce){
-if(BankState[BankArrayNumber] == HIGH){
-BankState[BankArrayNumber] = LOW;
- }
-else {
-BankState[BankArrayNumber] = HIGH;
-  time = millis();}
-}                                                                                               
-    //Bank button state making it latch and stuff
-
-
-KnobVal = analogRead(2);
-if (0<KnobVal)   { KnobValue = 0;}
-if (127<KnobVal) { KnobValue = 1;}
-if (254<KnobVal) { KnobValue = 2;}
-if (383<KnobVal) { KnobValue = 3;}
-if (511<KnobVal) { KnobValue = 4;}
-if (638<KnobVal) { KnobValue = 5;}
-if (767<KnobVal) { KnobValue = 6;}
-if (895<KnobVal) { KnobValue = 7;}
-if (1000<KnobVal){ KnobValue = 8;}
-
-int diff = abs(KnobValue - OldKnobValue);
-
-if((diff > TOLERANCE) && (ChannelSelectState1 == HIGH))
-{ NewKnobValue1 = KnobValue;
-  OldKnobValue = KnobValue;
-  }     
-if((diff > TOLERANCE) && (ChannelSelectState2 == HIGH))
-{ NewKnobValue2 = KnobValue;
-  OldKnobValue = KnobValue;
-  }  
-if((diff > TOLERANCE) && (ChannelSelectState3  == HIGH))
-{ NewKnobValue3 = KnobValue;
-  OldKnobValue = KnobValue;
+{ if ((ClockKeep == 1)  || (ClockKeep == 5) || (ClockKeep == 9)  || (ClockKeep == 13) ||  (ClockKeep == 17)  || (ClockKeep == 21) || (ClockKeep == 25) || (ClockKeep == 29) && (BankRecord == 3)) {
+      digitalWrite(BankLED, LOW);
+    }
+    else {
+      digitalWriteCast(BankLED, BankState[BankArrayNumber]);
+    }
   }
-if((diff > TOLERANCE) && (ChannelSelectState4  == HIGH))
-{ NewKnobValue4 = KnobValue;
-  OldKnobValue = KnobValue;
-  }
-if((diff > TOLERANCE) && (ChannelSelectState5  == HIGH))
-{ NewKnobValue5 = KnobValue;
-  OldKnobValue = KnobValue;
-  }
-if((diff > TOLERANCE) && (ChannelSelectState6  == HIGH))
-{ NewKnobValue6 = KnobValue;
-  OldKnobValue = KnobValue;
-  } //lots of the shit with that shift knob!!!! MEMORY STUFF
-   
 
+
+
+  if (ButtonBankSelectState[BankArrayNumber] == HIGH && Bankprevious[BankArrayNumber] == LOW && millis() - time > debounce) {
+    if (BankState[BankArrayNumber] == HIGH) {
+      BankState[BankArrayNumber] = LOW;
+    }
+    else {
+      BankState[BankArrayNumber] = HIGH;
+      time = millis();
+    }
+  }
+  //Bank button state making it latch and stuff
+
+
+  //SHIFT knob - note swap with commented line for reversed pot pins
+  KnobVal = 1024 - analogRead(2);
+  //KnobVal = analogRead(2);
+  
+  int i = 0;
+  while (i < 8) {
+    if (shiftKnobAnalogValues[i] > KnobVal) {
+      KnobValue = i-1;
+      break;
+    }
+    i++;
+  }
+  if (1000 < KnobVal) {
+    KnobValue = 8;
+  }
+
+  int diff = abs(KnobValue - OldKnobValue);
+  if (diff > TOLERANCE) {
+    if (ChannelSelectState1 == HIGH) NewKnobValue1 = KnobValue;
+    if (ChannelSelectState2 == HIGH) NewKnobValue2 = KnobValue;
+    if (ChannelSelectState3 == HIGH) NewKnobValue3 = KnobValue;
+    if (ChannelSelectState4 == HIGH) NewKnobValue4 = KnobValue;
+    if (ChannelSelectState5 == HIGH) NewKnobValue5 = KnobValue;
+    if (ChannelSelectState6 == HIGH) NewKnobValue6 = KnobValue;
+    
+    OldKnobValue = KnobValue;
+  }
+
+
+
+
+//  CHANNELSELECT = analogRead(0);
+//    (ChannelSelectState1 = LOW);
+//    (ChannelSelectState2 = LOW);
+//    (ChannelSelectState3 = LOW);
+//    (ChannelSelectState4 = LOW);
+//    (ChannelSelectState5 = LOW);
+//    (ChannelSelectState6 = LOW);
+//    if (20 > CHANNELSELECT)   {
+//      (ChannelSelectState1 = HIGH);
+//    } 
+//    if (170 < CHANNELSELECT) {
+//      (ChannelSelectState2 = HIGH);
+//    } 
+//    if (240 < CHANNELSELECT) {
+//      (ChannelSelectState3 = HIGH);
+//    } 
+//    if (420 < CHANNELSELECT) {
+//      (ChannelSelectState4 = HIGH);
+//    } 
+//    if (750 < CHANNELSELECT) {
+//      (ChannelSelectState5 = HIGH);
+//    } 
+//    if (1000 < CHANNELSELECT) {
+//      (ChannelSelectState6 = HIGH);
+//    }
 
 {CHANNELSELECT= analogRead(0);
 if(20>CHANNELSELECT)   {(ChannelSelectState1 = HIGH); (ChannelSelectState2 = LOW); (ChannelSelectState3 = LOW); (ChannelSelectState4 = LOW); (ChannelSelectState5 = LOW);  (ChannelSelectState6 = LOW);}
@@ -386,137 +421,317 @@ if(1000<CHANNELSELECT){(ChannelSelectState1 = LOW); (ChannelSelectState2 = LOW);
 
 
 
-       if((BankState [1] == LOW) && (ChannelSelectState1  == HIGH))                                  {Channel = 1; BankArrayNumber = 1;  BankArrayShift1 = 0;     BankRecord = 0;  ClearState = 1;}
-  else if((BankState [2] == LOW) && (ChannelSelectState2  == HIGH))                                  {Channel = 2; BankArrayNumber = 2;  BankArrayShift2 = 0;     BankRecord = 0;  ClearState = 2;}
-  else if((BankState [3] == LOW) && (ChannelSelectState3  == HIGH))                                  {Channel = 3; BankArrayNumber = 3;  BankArrayShift3 = 0;     BankRecord = 0;  ClearState = 3;} 
-  else if((BankState [4] == LOW) && (ChannelSelectState4  == HIGH))                                  {Channel = 7; BankArrayNumber = 4;  BankArrayShift4 = 0;     BankRecord = 0;  ClearState = 7;} 
-  else if((BankState [5] == LOW) && (ChannelSelectState5  == HIGH))                                  {Channel = 8; BankArrayNumber = 5;  BankArrayShift5 = 0;     BankRecord = 0;  ClearState = 8;} 
-  else if((BankState [6] == LOW) && (ChannelSelectState6  == HIGH))                                  {Channel = 9; BankArrayNumber = 6;  BankArrayShift6 = 0;     BankRecord = 0;  ClearState = 9;} 
-  
-  
-  else if((BankState [1] == HIGH) && (ChannelSelectState1  == HIGH))                                 {Channel = 1; BankArrayNumber = 1;  BankArrayShift1 = 3;     BankRecord = 3;  ClearState = 1;}
-  else if((BankState [2] == HIGH) && (ChannelSelectState2  == HIGH))                                 {Channel = 2; BankArrayNumber = 2;  BankArrayShift2 = 3;     BankRecord = 3;  ClearState = 2;}
-  else if((BankState [3] == HIGH) && (ChannelSelectState3  == HIGH))                                 {Channel = 3; BankArrayNumber = 3;  BankArrayShift3 = 3;     BankRecord = 3;  ClearState = 3;} 
-  else if((BankState [4] == HIGH) && (ChannelSelectState4  == HIGH))                                 {Channel = 7; BankArrayNumber = 4;  BankArrayShift4 = 3;     BankRecord = 3;  ClearState = 7;} 
-  else if((BankState [5] == HIGH) && (ChannelSelectState5  == HIGH))                                 {Channel = 8; BankArrayNumber = 5;  BankArrayShift5 = 3;     BankRecord = 3;  ClearState = 8;}
-  else if((BankState [6] == HIGH) && (ChannelSelectState6  == HIGH))                                 {Channel = 9; BankArrayNumber = 6;  BankArrayShift6 = 3;     BankRecord = 3;  ClearState = 9;}
 
-//switch for selecting between both channels and banks
-
-
-
-
-if(ClearButtonState == HIGH){ 
-for(int i = 1; i<42; i++){
-Sequence[ClearState+BankRecord][i] = 0;
-}
-}                                                 //This is the clear button
-
-
-
-
-             
-//for(int ii = 1; ii<14; ii++){
-//Sequence[ii][33]=Sequence[ii][1];
-//Sequence[ii][34]=Sequence[ii][2];
-//Sequence[ii][35]=Sequence[ii][3];
-//Sequence[ii][36]=Sequence[ii][4];
-//Sequence[ii][37]=Sequence[ii][5];
-//Sequence[ii][38]=Sequence[ii][6];
-//Sequence[ii][39]=Sequence[ii][7];
-//Sequence[ii][40]=Sequence[ii][8];
-//Sequence[ii][41]=Sequence[ii][9]; 
-//}                                    //THIS MAKES SURE WHEN THE KNOB SHIFTS THE PATTERN IT DOESNT LOSE A LOAD OF IT!
-
-
-
-     if((FillButtonState == HIGH) && (Channel == 1)) {Fill1 = 1; Fill2 = 0; Fill3 = 0; Fill4 = 0;  Fill5 = 0;  Fill6 = 0;} 
-else if((FillButtonState == HIGH) && (Channel == 2)) {Fill1 = 0; Fill2 = 1; Fill3 = 0; Fill4 = 0;  Fill5 = 0;  Fill6 = 0;}
-else if((FillButtonState == HIGH) && (Channel == 3)) {Fill1 = 0; Fill2 = 0; Fill3 = 1; Fill4 = 0;  Fill5 = 0;  Fill6 = 0;}
-else if((FillButtonState == HIGH) && (Channel == 7)) {Fill1 = 0; Fill2 = 0; Fill3 = 0; Fill4 = 1;  Fill5 = 0;  Fill6 = 0;}
-else if((FillButtonState == HIGH) && (Channel == 8)) {Fill1 = 0; Fill2 = 0; Fill3 = 0; Fill4 = 0;  Fill5 = 1;  Fill6 = 0;}
-else if((FillButtonState == HIGH) && (Channel == 9)) {Fill1 = 0; Fill2 = 0; Fill3 = 0; Fill4 = 0;  Fill5 = 0;  Fill6 = 1;}
-
-else if((FillButtonState == LOW)  && (Channel == 1)) {Fill1 = 0; Fill2 = 0; Fill3 = 0; Fill4 = 0;  Fill5 = 0;  Fill6 = 0;} 
-else if((FillButtonState == LOW)  && (Channel == 2)) {Fill1 = 0; Fill2 = 0; Fill3 = 0; Fill4 = 0;  Fill5 = 0;  Fill6 = 0;}
-else if((FillButtonState == LOW)  && (Channel == 3)) {Fill1 = 0; Fill2 = 0; Fill3 = 0; Fill4 = 0;  Fill5 = 0;  Fill6 = 0;}
-else if((FillButtonState == LOW)  && (Channel == 7)) {Fill1 = 0; Fill2 = 0; Fill3 = 0; Fill4 = 0;  Fill5 = 0;  Fill6 = 0;} 
-else if((FillButtonState == LOW)  && (Channel == 8)) {Fill1 = 0; Fill2 = 0; Fill3 = 0; Fill4 = 0;  Fill5 = 0;  Fill6 = 0;} 
-else if((FillButtonState == LOW)  && (Channel == 9)) {Fill1 = 0; Fill2 = 0; Fill3 = 0; Fill4 = 0;  Fill5 = 0;  Fill6 = 0;} 
-
-
-
-
-
-      //This is the FILL button
-
-
-
-
-if(DeleteButtonState == HIGH){
-Sequence[Channel+BankRecord][looper+1] = 0;}                             //This is the delete button
-
-
-if(ResetButtonState != LastResetButtonState){
-if(ResetButtonState == HIGH) {
-  looper = 0;  
-  ClockKeep = 0;
-  BankPush1 = 0;
-  BankPush2 = 0;
-  BankPush3 = 0;
-  BankPush4 = 0;
-  BankPush5 = 0;
-  BankPush6 = 0;
-  
-  
-  
-  
-  }} 
-
-  
-
-
-StepLength = analogRead(1);
-if(0<StepLength){
-steps= 1;}
-if(150<StepLength){
-steps= 2;}
-if(300<StepLength){
-steps= 4;}
-if(500<StepLength){
-steps= 8;}
-if(750<StepLength){
-steps=16;}
-if(1000<StepLength){ 
-steps=32;}                                      //this bit chooses how long the sequence is
-
-
-
-
-
- if(looper >= steps) {looper = 0;}   //this bit starts the sequence over again
- if(ClockKeep >= 32) {looper = 0; ClockKeep = 0;}
- if((BankPush1  + NewKnobValue1) >= steps) {BankPush1 = 0;}
- if((BankPush2  + NewKnobValue2) >= steps) {BankPush2 = 0;}
- if((BankPush3  + NewKnobValue3) >= steps) {BankPush3 = 0;}
- if((BankPush4  + NewKnobValue4) >= steps) {BankPush4 = 0;}
- if((BankPush5  + NewKnobValue5) >= steps) {BankPush5 = 0;}
- if((BankPush6  + NewKnobValue6) >= steps) {BankPush6 = 0;}
- 
-
-
-
-
-
- lastButtonState = buttonState;
- LastRecordButtonState = RecordButtonState;
- LastResetButtonState = ResetButtonState;//sectoion is for the state change detections
- Bankprevious[BankArrayNumber] = ButtonBankSelectState[BankArrayNumber]; 
+  if ((BankState [1] == LOW) && (ChannelSelectState1  == HIGH))                                  {
+    Channel = 1;
+    BankArrayNumber = 1;
+    BankArrayShift1 = 0;
+    BankRecord = 0;
+    ClearState = 1;
   }
- 
-  
-  
-  //  =================== convenience routines ===================
+  else if ((BankState [2] == LOW) && (ChannelSelectState2  == HIGH))                                  {
+    Channel = 2;
+    BankArrayNumber = 2;
+    BankArrayShift2 = 0;
+    BankRecord = 0;
+    ClearState = 2;
+  }
+  else if ((BankState [3] == LOW) && (ChannelSelectState3  == HIGH))                                  {
+    Channel = 3;
+    BankArrayNumber = 3;
+    BankArrayShift3 = 0;
+    BankRecord = 0;
+    ClearState = 3;
+  }
+  else if ((BankState [4] == LOW) && (ChannelSelectState4  == HIGH))                                  {
+    Channel = 7;
+    BankArrayNumber = 4;
+    BankArrayShift4 = 0;
+    BankRecord = 0;
+    ClearState = 7;
+  }
+  else if ((BankState [5] == LOW) && (ChannelSelectState5  == HIGH))                                  {
+    Channel = 8;
+    BankArrayNumber = 5;
+    BankArrayShift5 = 0;
+    BankRecord = 0;
+    ClearState = 8;
+  }
+  else if ((BankState [6] == LOW) && (ChannelSelectState6  == HIGH))                                  {
+    Channel = 9;
+    BankArrayNumber = 6;
+    BankArrayShift6 = 0;
+    BankRecord = 0;
+    ClearState = 9;
+  }
+
+
+  else if ((BankState [1] == HIGH) && (ChannelSelectState1  == HIGH))                                 {
+    Channel = 1;
+    BankArrayNumber = 1;
+    BankArrayShift1 = 3;
+    BankRecord = 3;
+    ClearState = 1;
+  }
+  else if ((BankState [2] == HIGH) && (ChannelSelectState2  == HIGH))                                 {
+    Channel = 2;
+    BankArrayNumber = 2;
+    BankArrayShift2 = 3;
+    BankRecord = 3;
+    ClearState = 2;
+  }
+  else if ((BankState [3] == HIGH) && (ChannelSelectState3  == HIGH))                                 {
+    Channel = 3;
+    BankArrayNumber = 3;
+    BankArrayShift3 = 3;
+    BankRecord = 3;
+    ClearState = 3;
+  }
+  else if ((BankState [4] == HIGH) && (ChannelSelectState4  == HIGH))                                 {
+    Channel = 7;
+    BankArrayNumber = 4;
+    BankArrayShift4 = 3;
+    BankRecord = 3;
+    ClearState = 7;
+  }
+  else if ((BankState [5] == HIGH) && (ChannelSelectState5  == HIGH))                                 {
+    Channel = 8;
+    BankArrayNumber = 5;
+    BankArrayShift5 = 3;
+    BankRecord = 3;
+    ClearState = 8;
+  }
+  else if ((BankState [6] == HIGH) && (ChannelSelectState6  == HIGH))                                 {
+    Channel = 9;
+    BankArrayNumber = 6;
+    BankArrayShift6 = 3;
+    BankRecord = 3;
+    ClearState = 9;
+  }
+
+  //switch for selecting between both channels and banks
+
+
+
+
+  if (ClearButtonState == HIGH) {
+    for (int i = 1; i < 42; i++) {
+      Sequence[ClearState + BankRecord][i] = 0;
+    }
+  }                                                 //This is the clear button
+
+
+
+
+
+  //for(int ii = 1; ii<14; ii++){
+  //Sequence[ii][33]=Sequence[ii][1];
+  //Sequence[ii][34]=Sequence[ii][2];
+  //Sequence[ii][35]=Sequence[ii][3];
+  //Sequence[ii][36]=Sequence[ii][4];
+  //Sequence[ii][37]=Sequence[ii][5];
+  //Sequence[ii][38]=Sequence[ii][6];
+  //Sequence[ii][39]=Sequence[ii][7];
+  //Sequence[ii][40]=Sequence[ii][8];
+  //Sequence[ii][41]=Sequence[ii][9];
+  //}                                    //THIS MAKES SURE WHEN THE KNOB SHIFTS THE PATTERN IT DOESNT LOSE A LOAD OF IT!
+
+
+
+  if ((FillButtonState == HIGH) && (Channel == 1)) {
+    Fill1 = 1;
+    Fill2 = 0;
+    Fill3 = 0;
+    Fill4 = 0;
+    Fill5 = 0;
+    Fill6 = 0;
+  }
+  else if ((FillButtonState == HIGH) && (Channel == 2)) {
+    Fill1 = 0;
+    Fill2 = 1;
+    Fill3 = 0;
+    Fill4 = 0;
+    Fill5 = 0;
+    Fill6 = 0;
+  }
+  else if ((FillButtonState == HIGH) && (Channel == 3)) {
+    Fill1 = 0;
+    Fill2 = 0;
+    Fill3 = 1;
+    Fill4 = 0;
+    Fill5 = 0;
+    Fill6 = 0;
+  }
+  else if ((FillButtonState == HIGH) && (Channel == 7)) {
+    Fill1 = 0;
+    Fill2 = 0;
+    Fill3 = 0;
+    Fill4 = 1;
+    Fill5 = 0;
+    Fill6 = 0;
+  }
+  else if ((FillButtonState == HIGH) && (Channel == 8)) {
+    Fill1 = 0;
+    Fill2 = 0;
+    Fill3 = 0;
+    Fill4 = 0;
+    Fill5 = 1;
+    Fill6 = 0;
+  }
+  else if ((FillButtonState == HIGH) && (Channel == 9)) {
+    Fill1 = 0;
+    Fill2 = 0;
+    Fill3 = 0;
+    Fill4 = 0;
+    Fill5 = 0;
+    Fill6 = 1;
+  }
+
+  else if ((FillButtonState == LOW)  && (Channel == 1)) {
+    Fill1 = 0;
+    Fill2 = 0;
+    Fill3 = 0;
+    Fill4 = 0;
+    Fill5 = 0;
+    Fill6 = 0;
+  }
+  else if ((FillButtonState == LOW)  && (Channel == 2)) {
+    Fill1 = 0;
+    Fill2 = 0;
+    Fill3 = 0;
+    Fill4 = 0;
+    Fill5 = 0;
+    Fill6 = 0;
+  }
+  else if ((FillButtonState == LOW)  && (Channel == 3)) {
+    Fill1 = 0;
+    Fill2 = 0;
+    Fill3 = 0;
+    Fill4 = 0;
+    Fill5 = 0;
+    Fill6 = 0;
+  }
+  else if ((FillButtonState == LOW)  && (Channel == 7)) {
+    Fill1 = 0;
+    Fill2 = 0;
+    Fill3 = 0;
+    Fill4 = 0;
+    Fill5 = 0;
+    Fill6 = 0;
+  }
+  else if ((FillButtonState == LOW)  && (Channel == 8)) {
+    Fill1 = 0;
+    Fill2 = 0;
+    Fill3 = 0;
+    Fill4 = 0;
+    Fill5 = 0;
+    Fill6 = 0;
+  }
+  else if ((FillButtonState == LOW)  && (Channel == 9)) {
+    Fill1 = 0;
+    Fill2 = 0;
+    Fill3 = 0;
+    Fill4 = 0;
+    Fill5 = 0;
+    Fill6 = 0;
+  }
+
+
+
+
+
+  //This is the FILL button
+
+
+
+
+  if (DeleteButtonState == HIGH) {
+    Sequence[Channel + BankRecord][looper + 1] = 0;
+  }                             //This is the delete button
+
+  if (ResetButtonState != LastResetButtonState) {
+    if (ResetButtonState == HIGH) {
+      looper = 0;
+      ClockKeep = 0;
+      BankPush1 = 0;
+      BankPush2 = 0;
+      BankPush3 = 0;
+      BankPush4 = 0;
+      BankPush5 = 0;
+      BankPush6 = 0;
+    }
+    LastResetButtonState = ResetButtonState;
+  }
+
+
+
+  //NOTE for potentiometer pins reversed, swap for commented line below
+  StepLength = 1024 - analogRead(1);
+  //StepLength = analogRead(1);
+
+  if (0 < StepLength) {
+    steps = 1;
+  }
+  if (150 < StepLength) {
+    steps = 2;
+  }
+  if (300 < StepLength) {
+    steps = 4;
+  }
+  if (500 < StepLength) {
+    steps = 8;
+  }
+  if (750 < StepLength) {
+    steps = 16;
+  }
+  if (1000 < StepLength) {
+    steps = 32;
+  }                                      //this bit chooses how long the sequence is
+
+
+
+
+
+  if (looper >= steps) {
+    looper = 0; //this bit starts the sequence over again
+  }
+  if (ClockKeep >= 32) {
+    looper = 0;
+    ClockKeep = 0;
+  }
+  if ((BankPush1  + NewKnobValue1) >= steps) {
+    BankPush1 = 0;
+  }
+  if ((BankPush2  + NewKnobValue2) >= steps) {
+    BankPush2 = 0;
+  }
+  if ((BankPush3  + NewKnobValue3) >= steps) {
+    BankPush3 = 0;
+  }
+  if ((BankPush4  + NewKnobValue4) >= steps) {
+    BankPush4 = 0;
+  }
+  if ((BankPush5  + NewKnobValue5) >= steps) {
+    BankPush5 = 0;
+  }
+  if ((BankPush6  + NewKnobValue6) >= steps) {
+    BankPush6 = 0;
+  }
+
+
+
+
+
+
+  lastButtonState = buttonState;
+  LastRecordButtonState = RecordButtonState;
+  LastResetButtonState = ResetButtonState;//sectoion is for the state change detections
+  Bankprevious[BankArrayNumber] = ButtonBankSelectState[BankArrayNumber];
+}
+
+
+
+//  =================== convenience routines ===================
 
 //  isr() - quickly handle interrupts from the clock input
 //  ------------------------------------------------------
@@ -524,8 +739,11 @@ void isr()
 {
 
   buttonState = HIGH;
+  digitalWrite(ClockOut, HIGH);
 
- 
+
 }
 
-
+void digitalWriteCast(int pinNumber, bool pinState) {
+  digitalWrite(pinNumber, pinState ? HIGH : LOW);
+}
